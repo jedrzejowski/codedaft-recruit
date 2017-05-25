@@ -1,6 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Build" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="main.cpp" PASS_PARENT_ENVS_2="true" RUN_PATH="/bin/g++" EXPLICIT_BUILD_TARGET_NAME="all">
-    <envs />
-    <method />
-  </configuration>
-</component>
