@@ -6,63 +6,108 @@ T = 1/100;
 
 realX = readFile('rzeczywiste_polozenie.csv');
 mesX = readFile('zmierzone_polozenie.csv');
-mesV = readFile('zmierzone_polozenie.csv');
+mesV = readFile('zmierzona_predkosc.csv');
 
 czas = T:T:20;
-kalmanX = zeros(1, 2000);
-kalmanV = zeros(1, 2000);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Odchylenie standardowe pomiaru
-std_dev = 6.35;
+Q = 0.9;
+R = 775;
 
-% Macierze kowariancji szumow
-V = 1*std_dev*T;
-W = std_dev*std_dev;
+x = 0;
+P = 0;
 
-A = 1;
-C = 1.00;
-
-%początek
-x0 = 0;
-P0 = 1;
-xpri = x0;
-Ppri = P0;
-xpost = x0;
-Ppost = P0;
+kalmanX1(1) = 0;
 
 for i = 2:size(mesX)
     
-	% aktualizacja czasu
-    xpri = xpost;
-    Ppri = Ppost + V;
+	
+    P = P + Q;
+    K = P * inv(P + R); 
+    x = x + K * (mesX(i-1) - x); 
+    P = ( 1 - K ) * P;
         
-    % aktualizacja pomiarow
-    hej = mesX(i) - xpri;
-    S = Ppri + W;
-    K = Ppri*S^(-1);
-    xpost = xpri + K*hej;
-    Ppost = Ppri - K*S*K';
-        
-    kalmanX(i) = xpost;
+    kalmanX1(i) = x;
     
 end
 
-disp(['Poziom odchylenia po pierszym: ', num2str(sum((abs(realX-kalmanX'))./realX)/2000*100), '%']);
+
+
+R = 500;
+Q = 5;
+
+x = 0;
+P = 0;
+
+kalmanX2(1) = 0;
+
+for i = 2:size(mesX)
+    
+	
+    P = P + Q;
+    K = P * inv(P + R); 
+    x = x + K * (kalmanX1(i-1) - x); 
+    P = ( 1 - K ) * P;
+        
+    kalmanX2(i) = x;
+    
+end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 figure;
-plot(czas, mesX, 'r', czas, realX, 'b', czas, kalmanX, 'g')
+%plot(czas, mesX, 'r', czas, realX, 'b', czas, kalmanX1, 'g')
+%legend('Zmierzony', 'Rzeczywisty', 'Filtr Kalman')
 
-%figure;
-%plot(czas, mesV, 'r', czas, realV, 'b', czas, kalmanV, 'g')
+%%predkosc
+
+realV(1) = 0;
+for i = 2:size(mesX)-1
+    realV(i) = (realX(i+1) - realX(i-1))./(2*T);
+end
+realV(2000)=0;
+
+Q = 1;
+R = 775;
+
+x = 0;
+P = 0;
+
+kalmanV1(1) = 0;
+
+for i = 2:size(mesX)
+    
+	
+    P = P + Q;
+    K = P * inv(P + R); 
+    x = x + K * (mesV(i-1) - x) - 0.004; 
+
+    P = ( 1 - K ) * P;
+        
+    kalmanV1(i) = x;
+    
+end
+kalmanV1(2000)=0;
 
 
 
+%dodatawnie predkosci
+
+kalmanX3(1) = 0;
+for i = 2:size(mesX)
+    kalmanX3(i) = (sum(kalmanV1(1:i))*T + kalmanX2(i) + kalmanX2(i-1) + kalmanV1(i-1)*T)/3;
+end
+
+
+
+
+
+plot(czas, mesX, 'r', czas, realX, 'b', czas, kalmanX3, 'g')
 
 
 function vec = readFile(name)
